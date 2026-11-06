@@ -18,15 +18,47 @@
     }                         \
   }
 
+#define HP_FLAG "hp_flag=1"
+
+typedef struct HP_info{
+
+}HP_info;
+
 HP_ErrorCode HP_CreateFile(const char *fileName) {
   /* TODO: δημιουργήστε το αρχείο, δεσμεύστε το πρώτο μπλοκ και αποθηκεύστε
      εκεί ένα στιγμιότυπο της HP_info */
+
+  //format of meta hp data block: #hp_flag=1 #record organization
   return HP_ERROR;
 }
 
 HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
   /* TODO: ανοίξτε το αρχείο, διαβάστε τα μεταδεδομένα από το πρώτο μπλοκ και
      ελέγξτε ότι πρόκειται όντως για αρχείο σωρού */
+    BF_Block *meta;
+    BF_Init(LRU);
+    CALL_BF(BF_OpenFile(fileName,fileDesc));
+    BF_GetBlock(fileDesc,0,meta);
+
+    char* meta_data=BF_Block_GetData(meta);
+    char** data;
+    int count=0;
+    int length=0;
+
+    for(int i=0;i<strlen(meta_data);i++){//exctract meta data 
+      if(meta_data[i]!=';'){
+        data[count][length]=meta_data[i];
+        length++;
+      }else{
+        length=0;
+        count++;
+      }
+    }
+
+    if(data[0]==HP_FLAG){//check if heap file
+      
+    }
+
   return HP_ERROR;
 }
 
