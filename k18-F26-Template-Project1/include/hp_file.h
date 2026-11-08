@@ -20,6 +20,12 @@ typedef enum HP_ErrorCode {
  */
 typedef struct HP_info {
   /* TODO: συμπληρώστε τα πεδία που χρειάζεστε */
+    int num_id;
+    int max_recs;
+    char *fileName;
+    int blockstaken;
+    int first_free_block;
+    Record rec;
 } HP_info;
 
 /* Δημιουργεί και αρχικοποιεί ένα άδειο αρχείο σωρού με όνομα fileName. Αν το
