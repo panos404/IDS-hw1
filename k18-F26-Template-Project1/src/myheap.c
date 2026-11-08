@@ -29,6 +29,7 @@
  */
 
 int main(int argc, char *argv[]) {
-  /* ... */
+  
+  HP_CreateFile("DBs/poutsa.txt");
   return EXIT_SUCCESS;
 }
