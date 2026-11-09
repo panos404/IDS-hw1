@@ -60,20 +60,20 @@ HP_ErrorCode get_metadata(int fileDesc, struct HP_info *info){
   memcpy(info, data, sizeof(HP_info));
 
   //apodesmeusi
-  CALL_BF(BF_UnpinBlock(block));
+ // CALL_BF(BF_UnpinBlock(block));//need pinned the meta data block
   BF_Block_Destroy(&block);
 
   return HP_OK;
 }
 
-int find_hp_info(int fileDesc){
+int find_hp_info(int fileDesc){//finds metadata hp info struct for a open file
   for (int j=0;j<=i;j++){
     printf("find %d,%d\n",metadata[j].fileDesc,fileDesc);
     if (metadata[j].fileDesc == fileDesc){
       return j;
     }
   }
-  return -1;
+  return -1;//file not found
 }
 
 
@@ -82,10 +82,11 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
      εκεί ένα στιγμιότυπο της HP_info */
   int file_desc;
   BF_Block *new_block;
-  BF_Block_Init(&new_block);
+  if(i<0)
+    BF_Block_Init(&new_block);
 
-
-  // CALL_BF(BF_Init(LRU));
+  
+  CALL_BF(BF_Init(LRU));
   // printf("edw1\n");
 
   CALL_BF(BF_CreateFile(fileName));
@@ -116,8 +117,8 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   BF_Block_Destroy(&new_block);
   CALL_BF(BF_CloseFile(file_desc));
   i--;
-  
-  // CALL_BF(BF_Close());
+  if(i=0)
+    CALL_BF(BF_Close());
   printf("end1\n");
  return HP_OK;
 }
@@ -125,7 +126,8 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
 HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
   /* TODO: ανοίξτε το αρχείο, διαβάστε τα μεταδεδομένα από το πρώτο μπλοκ και
      ελέγξτε ότι πρόκειται όντως για αρχείο σωρού */
-    // CALL_BF(BF_Init(LRU));
+    if(i<0)
+     CALL_BF(BF_Init(LRU));
 
     CALL_BF(BF_OpenFile(fileName,fileDesc));
     printf("file in open: %d",*fileDesc);
@@ -152,12 +154,20 @@ HP_ErrorCode HP_CloseFile(int fileDesc) {
 
   int j = find_hp_info(fileDesc);
   printf("bf md %d %d,%d,%d\n",i,j,fileDesc,metadata[j].fileDesc);
+  // BF_Block *block;
+  // BF_Block_Init(&block);
+  // for(int z = 0;z < metadata[j].num_id; z++){
+  //   CALL_BF(BF_GetBlock(fileDesc,z,block));
+
+  // }
+
   set_metadata(fileDesc,0,metadata[j]);
   printf("af md\n");
   CALL_BF(BF_CloseFile(fileDesc));
   metadata[j]=metadata[i];
   i--;
-  // CALL_BF(BF_Close());
+  if(i<0)
+    CALL_BF(BF_Close());
   printf("end3\n");
   return HP_OK;
 }
