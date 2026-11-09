@@ -20,8 +20,10 @@ typedef enum HP_ErrorCode {
  */
 typedef struct HP_info {
   /* TODO: συμπληρώστε τα πεδία που χρειάζεστε */
+    char file_type[20];
     int num_id;
     int max_recs;
+    int fileDesc;
     char fileName[100];//filename up to 100 chars
     int blockstaken;
     int first_free_block;

@@ -29,8 +29,20 @@
  */
 
 int main(int argc, char *argv[]) {
-  int file;
-  HP_CreateFile("DBs/poutsa.txt");
-  HP_OpenFile("DBs/poutsa.txt",&file);
+  int file,file2;
+
+  BF_Init(LRU);
+  BF_PrintError( HP_CreateFile("DBs/poutsa.txt"));
+  BF_PrintError( HP_CreateFile("DBs/piss.txt"));
+  BF_Close();
+
+  BF_Init(LRU);
+  BF_PrintError(HP_OpenFile("DBs/poutsa.txt",&file));
+  BF_PrintError(HP_OpenFile("DBs/piss.txt",&file2));
+  printf("files %d,%d\n",file,file2);
+  BF_PrintError(HP_CloseFile(file));
+  BF_PrintError(HP_CloseFile(file2));
+  BF_Close();
+
   return EXIT_SUCCESS;
 }
