@@ -23,13 +23,13 @@ int i=-1; //counter to get metadata for open file
 
 #define HP_FLAG "hp_flag=1"
 
-void set_metadata(int fileDesc, int slot, struct HP_info info){
+HP_ErrorCode set_metadata(int fileDesc, int slot, struct HP_info info){
   if (slot < 0 || slot >= RECORDS_PER_BLOCK)
-  return -1;
+  return HP_ERROR;
   // extract metadata block
   BF_Block *block;
   BF_Block_Init(&block);
-  BF_GetBlock(fileDesc, 0, block);
+  CALL_BF(BF_GetBlock(fileDesc, 0, block));
 
   printf("The metadata is:\n %s, %d, %d", 
     info.fileName,
@@ -48,19 +48,24 @@ void set_metadata(int fileDesc, int slot, struct HP_info info){
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
   BF_Block_Destroy(&block);
+  return HP_OK;
 }
 
-void get_metadata(int fileDesc, struct HP_info *info){
+HP_ErrorCode get_metadata(int fileDesc, struct HP_info *info){
   //extract metadata block
   BF_Block *block;
-  BF_GetBlock(fileDesc, 0, block);
+  BF_Block_Init(&block);
+  CALL_BF(BF_GetBlock(fileDesc, 0, block));
 
   char *data = BF_Block_GetData(block);
 
-  memcpy(info, data, sizeof(info));
+  memcpy(info, data, sizeof(HP_info));
 
   //apodesmeusi
   CALL_BF(BF_UnpinBlock(block));
+  BF_Block_Destroy(&block);
+
+  return HP_OK;
 }
 
 
@@ -74,21 +79,19 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
 
   CALL_BF(BF_Init(LRU));
   printf("edw1\n");
+
   CALL_BF(BF_CreateFile(fileName));
-  
-  int counter;
   CALL_BF(BF_OpenFile(fileName, &file_desc));
+  i++;
+  printf("after open\n");
   CALL_BF(BF_AllocateBlock(file_desc, new_block));
   CALL_BF(BF_UnpinBlock(new_block));
-  
-  // CALL_BF(BF_GetBlockCounter(&file_desc, &counter));
-    i++;
 
+  printf("after alloc %d, %s,%s\n",i,fileName,metadata[i].fileName);
 
-  
-  printf("edw4");
   // initiliaze metadata
-  metadata[i].fileName = fileName;
+  strcpy(metadata[i].fileName, fileName);
+  printf("after strcpy\n");
   metadata[i].num_id = 0;
   metadata[i].first_free_block = 0;
   metadata[i].blockstaken = 0;
@@ -106,39 +109,23 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   i--;
   
   CALL_BF(BF_Close());
-  //format of meta hp data block: #hp_flag=1 #record organization
-  return HP_ERROR;
+  printf("end1\n");
+ return HP_OK;
 }
 
-// HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
-//   /* TODO: ανοίξτε το αρχείο, διαβάστε τα μεταδεδομένα από το πρώτο μπλοκ και
-//      ελέγξτε ότι πρόκειται όντως για αρχείο σωρού */
-//     BF_Block *meta;
-//     BF_Init(LRU);
-//     CALL_BF(BF_OpenFile(fileName,fileDesc));
-//     BF_GetBlock(fileDesc,0,meta);
+HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
+  /* TODO: ανοίξτε το αρχείο, διαβάστε τα μεταδεδομένα από το πρώτο μπλοκ και
+     ελέγξτε ότι πρόκειται όντως για αρχείο σωρού */
+    BF_Init(LRU);
 
-//     char* meta_data=BF_Block_GetData(meta);
-//     char** data;
-//     int count=0;
-//     int length=0;
+    CALL_BF(BF_OpenFile(fileName,fileDesc));
+    i++;
 
-//     for(int i=0;i<strlen(meta_data);i++){//exctract meta data 
-//       if(meta_data[i]!=';'){
-//         data[count][length]=meta_data[i];
-//         length++;
-//       }else{
-//         length=0;
-//         count++;
-//       }
-//     }
-
-//     if(data[0]==HP_FLAG){//check if heap file
-      
-//     }
-
-//   return HP_ERROR;
-// }
+    get_metadata(*fileDesc,&metadata[i]);
+    BF_Close();
+  printf("end2\n");
+  return HP_OK;
+}
 
 HP_ErrorCode HP_CloseFile(int fileDesc) {
   /* TODO: γράψτε στον δίσκο ό,τι εκκρεμεί και κλείστε το αρχείο */
