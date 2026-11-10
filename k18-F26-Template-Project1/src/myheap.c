@@ -29,28 +29,32 @@
  */
 
 int main(int argc, char *argv[]) {
-  int file,file2;
+  int file;
 
   // BF_Init(LRU);
   BF_PrintError( HP_CreateFile("DBs/poutsa.txt"));
-  BF_PrintError( HP_CreateFile("DBs/piss.txt"));
+  // BF_PrintError( HP_CreateFile("DBs/piss.txt"));
   
-  BF_PrintError( HP_CreateFile("DBs/idk.txt"));
-  BF_PrintError( HP_CreateFile("DBs/idk2.txt"));
-  BF_PrintError( HP_CreateFile("DBs/idk3.txt"));
-  // BF_Close();
+  // BF_PrintError( HP_CreateFile("DBs/idk.txt"));
+  // BF_PrintError( HP_CreateFile("DBs/idk2.txt"));
+  // BF_PrintError( HP_CreateFile("DBs/idk3.txt"));
+  // // BF_Close();
 
   // BF_Init(LRU);
-  BF_PrintError(HP_OpenFile("DBs/piss.txt",&file2));
+  // BF_PrintError(HP_OpenFile("DBs/piss.txt",&file2));
   HP_OpenFile("DBs/poutsa.txt",&file);
   Record rec = randomRecord();
   printf("\nLOOKING FOR:fds in main %d\n", file);
-  
+  int p=0;
   HP_InsertEntry(file, rec);
+  HP_InsertEntry(file,randomRecord());
+  HP_InsertEntry(file,randomRecord());
   // printf("files %d,%d\n",file,file2);
+  HP_PrintAllEntries(file,"id",&p);
   BF_PrintError(HP_CloseFile(file));
   // BF_PrintError(HP_CloseFile(file2));
   // BF_Close();
+  
 
   return EXIT_SUCCESS;
 }
