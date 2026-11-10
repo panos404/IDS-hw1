@@ -251,6 +251,39 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
 HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
   /* TODO: διατρέξτε τα μπλοκ του αρχείου και εκτυπώστε τις εγγραφές που στο
      πεδίο fieldName έχουν τιμή value. Αν value == NULL, εκτυπώστε τις όλες. */
+    BF_Block *block;
+    BF_Block_Init(&block);
+    Record rec;
+
+    //find metadata
+    int j = find_hp_info(fileDesc);
+    int num_records=RECORDS_PER_BLOCK;
+
+    //itirate till last active block except metadata block
+    for(int z = 1;z <= metadata[j].last_bid;z++){
+      BF_GetBlock(fileDesc,z,block);
+      if (z == metadata[j].last_bid){
+        num_records = metadata[j].max_recs;
+      }
+      for(int slot = 0;slot < num_records; slot++){//max_recs of block z need to be defined in entry
+        blockGetRecord(block,slot,&rec);//using metadata to know the way records are saveed in the block
+        if(fieldName == "city" && rec.city == (char*)value){
+          printRecord(rec);
+        }else if (fieldName == "firstname" && rec.firstname == (char*)value){
+          printRecord(rec);
+        }else if(fieldName == "lastname" && rec.lastname == (char*)value){
+          printRecord(rec);
+        }else if(fieldName == "postcode" && rec.postcode == (int*)value){
+          printRecord(rec);
+        }else if(fieldName == "id" && rec.id == (int*)value){
+          printRecord(rec);
+        }else if(value == NULL){
+          printRecord(rec);
+        } 
+      }
+      BF_UnpinBlock(block);
+    }
+    BF_Block_Destroy(&block);
   return HP_ERROR;
 }
 
