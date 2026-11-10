@@ -106,6 +106,7 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   metadata[i].first_free_block = -1;
   metadata[i].blockstaken = 0;
   strcpy(metadata[i].file_type, HP_FLAG);
+  printf("%s",metadata[i].file_type);
   metadata[i].max_recs = RECORDS_PER_BLOCK;
 
   
@@ -133,10 +134,10 @@ HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
     printf("file in open: %d",*fileDesc);
     i++;
 
-    get_metadata(*fileDesc, 15, &metadata[i]);
+    get_metadata(*fileDesc, 0, &metadata[i]);
     printf("file in open: %s\n",metadata[i].fileName);
-    if(!strcmp(metadata[i].file_type ,HP_FLAG)){
-      printf("error with strcmp\n");
+    if(strcmp(metadata[i].file_type ,HP_FLAG)){
+      printf("error with strcmp %s,%s\n",metadata[i].file_type,HP_FLAG);
       return HP_ERROR;
     }
     printf("In Open: fds is %d\n", *fileDesc);
@@ -260,26 +261,32 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
     int num_records=RECORDS_PER_BLOCK;
 
     //itirate till last active block except metadata block
+    printf("last block: %d\n",metadata[j].last_bid);
     for(int z = 1;z <= metadata[j].last_bid;z++){
       BF_GetBlock(fileDesc,z,block);
       if (z == metadata[j].last_bid){
-        num_records = metadata[j].max_recs;
+        printf("is last block: %d\n",z);
+        num_records = 1;//change, only for troubleshooting
       }
       for(int slot = 0;slot < num_records; slot++){//max_recs of block z need to be defined in entry
+        printf("in slot: %d\n",slot);
         blockGetRecord(block,slot,&rec);//using metadata to know the way records are saveed in the block
-        if(fieldName == "city" && rec.city == (char*)value){
+        if(!strcmp(fieldName,"city") && !strcmp(rec.city, (char*)value)){
           printRecord(rec);
-        }else if (fieldName == "firstname" && rec.firstname == (char*)value){
+        }else if (!strcmp(fieldName, "firstname") && !strcmp(rec.firstname, (char*)value)){
           printRecord(rec);
-        }else if(fieldName == "lastname" && rec.lastname == (char*)value){
+        }else if(!strcmp( fieldName, "lastname") && !strcmp(rec.lastname, (char*)value)){
           printRecord(rec);
-        }else if(fieldName == "postcode" && rec.postcode == (int*)value){
+        }else if(!strcmp(fieldName , "postcode") && rec.postcode == *(int*)value){
           printRecord(rec);
-        }else if(fieldName == "id" && rec.id == (int*)value){
+        }else if(!strcmp(fieldName ,"id") && rec.id == *(int*)value){
           printRecord(rec);
         }else if(value == NULL){
           printRecord(rec);
-        } 
+        } else{
+          printf("error %s,%s,%s\n",fieldName,(char*)value,rec.city);
+          printRecord(rec);
+        }
       }
       BF_UnpinBlock(block);
     }
