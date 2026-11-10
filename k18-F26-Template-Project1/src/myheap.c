@@ -34,14 +34,22 @@ int main(int argc, char *argv[]) {
   // BF_Init(LRU);
   BF_PrintError( HP_CreateFile("DBs/poutsa.txt"));
   BF_PrintError( HP_CreateFile("DBs/piss.txt"));
+  
+  BF_PrintError( HP_CreateFile("DBs/idk.txt"));
+  BF_PrintError( HP_CreateFile("DBs/idk2.txt"));
+  BF_PrintError( HP_CreateFile("DBs/idk3.txt"));
   // BF_Close();
 
   // BF_Init(LRU);
-  BF_PrintError(HP_OpenFile("DBs/poutsa.txt",&file));
   BF_PrintError(HP_OpenFile("DBs/piss.txt",&file2));
-  printf("files %d,%d\n",file,file2);
+  HP_OpenFile("DBs/poutsa.txt",&file);
+  Record rec = randomRecord();
+  printf("\nLOOKING FOR:fds in main %d\n", file);
+  
+  HP_InsertEntry(file, rec);
+  // printf("files %d,%d\n",file,file2);
   BF_PrintError(HP_CloseFile(file));
-  BF_PrintError(HP_CloseFile(file2));
+  // BF_PrintError(HP_CloseFile(file2));
   // BF_Close();
 
   return EXIT_SUCCESS;

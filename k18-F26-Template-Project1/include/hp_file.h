@@ -21,13 +21,14 @@ typedef enum HP_ErrorCode {
 typedef struct HP_info {
   /* TODO: συμπληρώστε τα πεδία που χρειάζεστε */
     char file_type[20];
-    int num_id;//last block
+    int last_bid;    //last block
     int max_recs;
     int fileDesc;
     char fileName[100];//filename up to 100 chars
     int blockstaken;
     int first_free_block;
-    Record rec;
+    Record rec; // η δομη του record
+
 } HP_info;
 
 /* Δημιουργεί και αρχικοποιεί ένα άδειο αρχείο σωρού με όνομα fileName. Αν το
