@@ -30,4 +30,11 @@ int blockSetRecord(BF_Block *block, int slot, Record record);
    Επιστρέφει 0 σε επιτυχία, -1 αν το slot είναι εκτός των ορίων του block. */
 int blockGetRecord(BF_Block *block, int slot, Record *record);
 
+
+// returns the first free slot in the block 
+int blockGetSlot(BF_Block *block, int *slot);
+
+// initializes all the slots of the block with dummy records
+void blockInitSlots(BF_Block *block);
+
 #endif  // BLOCK_RECORDS_H
