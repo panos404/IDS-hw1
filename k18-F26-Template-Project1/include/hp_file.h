@@ -25,6 +25,11 @@ typedef struct iterator{
     int slot;
 } Iterator;
 
+typedef struct hashEntry{
+    int valueid;    //
+    Iterator iterator;
+}hashEntry;
+
 typedef struct HP_info {
   /* TODO: συμπληρώστε τα πεδία που χρειάζεστε */
     char file_type[20];
@@ -34,7 +39,7 @@ typedef struct HP_info {
     char fileName[100];//filename up to 100 chars
     int blockstaken;
     int first_free_block;
-    Iterator iterator;    // iterator που δειχνει σε ενα record με δυο ints (blockid και slot)
+    hashEntry iterHTable[50];    // hashtable με iterators
 } HP_info;
 
 /* Δημιουργεί και αρχικοποιεί ένα άδειο αρχείο σωρού με όνομα fileName. Αν το

@@ -6,7 +6,6 @@
 #include "block_records.h"
 #include "hp_file.h"
 #include "record.h"
-#include "queue.h"
 
 HP_info metadata[BF_MAX_OPEN_FILES];  //array of metadata of open files
 int i = -1; //counter to get metadata for open file
@@ -109,9 +108,13 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   metadata[i].blockstaken = 0;
   strcpy(metadata[i].file_type, HP_FLAG);
   metadata[i].recs_last = 0;
-  metadata[i].iterator.bid = -1;
-  metadata[i].iterator.slot = -1;
 
+  // initialize the hashtable
+  for (int j=0; j < 25; j++){
+    metadata[i].iterHTable[j].valueid = -1; //doesn't correspond to value
+    metadata[i].iterHTable[j].iterator.bid = 0;
+    metadata[i].iterHTable[j].iterator.slot = 0;
+  }
   
 
   // put metadata block
@@ -206,8 +209,7 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
   int bid = metadata[mdpos].last_bid;
   printf("First available block is %d\n", bid);
 
-  // αν δεν υπαρχει free block(-1) φτιαξε ενα καινουργιο
-  // και αποθηκευσε την τιμη του
+  // αν ειναι πρωτη κληση
   if (bid <= 0){
     CALL_BF(BF_AllocateBlock(fileDesc, block));
     // fill me dummy records 
@@ -225,41 +227,54 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
     BF_GetBlock(fileDesc, bid, block);
   }
 
-  // πώς θα βρω σωστο slot για το record????
-
-  // 1.metadata στο block -> αλλαγη rec funcs
-  // ! βασικα δεν χρειαζεται αλλαγη εσωτερικα η rec_funcs
-  // , απλα προσοχη στα ορισματα
-
-  // 2.dummy records με id = -1 και iterate
-  // get the first availablel slot
-  // int slot;
   printf("In InsertEntry: before G\n");
   // blockGetSlot(block, &slot);
-  printf("The block has %d records in\n", metadata[mdpos].recs_last);
-  int slot;
-  slot = metadata[mdpos].recs_last; 
+  printf("-- block %d has %d records in\n", metadata[mdpos].last_bid, metadata[mdpos].recs_last);
   // αν υπαρχει block που εχει χωρο βαλτο εκει
-
+  
   // αν οχι φτιαξε καινουργιο block και 
-
+  
+  
   // στην εισαγωγη ελεγχει αν γεμιζει το block
   
-  printf("In InsertEntry: putting in slot: %d in block %d\n", slot, bid);
-  printf("In InsertEntry: h setrec gyrnaei: %d\n", blockSetRecord(block, slot, record));
-  // αν γεμιζει το block πρεπει το metadata να αλλαζει
-  // if (blockGetSlot(block, &slot) == -1){
-  //   printf("mpainw panta edw\n");
-  //   metadata[mdpos].first_free_block = -1;
-  // }
+  printf("In InsertEntry: putting in slot: %d in block %d\n", metadata[mdpos].recs_last, bid);
+  
+  int slot;
+  slot = metadata[mdpos].recs_last; 
+ 
+  int ret;  // grab return value
 
-  // records in the blocks
-  int count;
-  count = slot + 1;
-  metadata[mdpos].recs_last = count;
+
+  ret = blockSetRecord(block, slot, record);
+  printf("In InsertEntry: h setrec gyrnaei: %d\n", ret);
+
+  // αν το block εχει γεμισει (ret=-1)
+  if (ret == -1){
+    // φτιαξε καινουργιο block
+    // blockInitSlots(block);
+    printf("In InsertEntry: Block %d got full after insertion, moving to block %d", metadata[mdpos].last_bid, metadata[mdpos].last_bid + 1);
+    BF_Block *new_block;
+    BF_Block_Init(&new_block);
+    BF_AllocateBlock(fileDesc, new_block);
+    metadata[mdpos].last_bid ++;
+    metadata[mdpos].recs_last = 0;
+
+    slot = metadata[mdpos].recs_last;
+    // set the record there
+    blockSetRecord(block, slot, record);
+
+    BF_Block_SetDirty(new_block);
+    BF_Block_Destroy(&new_block);
+    BF_UnpinBlock(new_block);
+  }
+
+  // records in the last block
+  metadata[mdpos].recs_last++;
   printf("PRIN TO METADATA\n");
   set_metadata(fileDesc, 0, metadata[mdpos]);
-  printf("After setting metadata in INSentry %d\n", metadata[mdpos].first_free_block);
+  printf("After setting metadata in INSentry %d\n", metadata[mdpos].last_bid);
+
+  // au revoir
   BF_Block_SetDirty(block);
   BF_UnpinBlock(block);
   BF_Block_Destroy(&block);
@@ -347,7 +362,7 @@ HP_ErrorCode HP_GetEntry(int fileDesc, int blockid, int position, Record *record
     rcsInBlock = RECORDS_PER_BLOCK;
   
   // check position
-  if (position > rcsInBlock - 1){
+  if (position > rcsInBlock){
     printf("Invalid position given\n");
     return HP_ERROR;
   }
@@ -368,8 +383,6 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   
   // αρχιζει απο εκει που ειναι ο iterator
   // εχει αρχικοποιηθει στο -1, -1 σε περιπτωση που δεν εχει χρησιμοποιηθει (?)
-  Queue itQue;
-  initializeQueue(&itQue);
 
   // struct iterator με δυο ints σε block_id και slot στο id
   // για το record που ψαξαμε τελευταιο
@@ -390,4 +403,32 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   // global μεταβλητη για καλεσμενες values
   // με hashtable δεν χρειαζεται αυτο
   // θα γραφει παντα απο πανω απο ο,τι υπαρχει
+
+  // array με τα values στο metadata
+  int mdpos = find_hp_info(fileDesc);
+  
+  // find the correct hashed position
+  int key = (int)value % 50;
+  // extreact the value in the position in hashtable
+  int idInTable = metadata[mdpos].iterHTable[key].valueid;
+
+  // αν δεν εχει value
+  if (idInTable == -1){
+    metadata[mdpos].iterHTable[key].valueid = (int)value;
+    // αρχισε iterate απο την αρχη
+    // αποθηκευσε το iterator στο σωστο σημειο
+  }
+
+  // αν εχει αλλο value
+  //-- γραψε απο πανω
+  //-- αρχισε iterate απο την αρχη
+  //-- αποθηκευσε το καινουργιο positon
+
+  // αν εχει το ιδιο value
+  //-- αρχισε iterate απο το αποθηκευεμενο
+  //-- αποθηκευσε το καινουργιο position
+
+  // αρα αρχιζει απο την αρχη παντα
+  // εκτος αν εχει το ιδιο value
+
 }

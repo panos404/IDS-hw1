@@ -30,64 +30,71 @@
 
 int main(int argc, char *argv[]) {
   int fileDesc;
-  int num_lines=0;
+  // int num_lines=0;
   
-  if(!(argc == 3 && !strcmp(argv[1],"-i"))){
-    printf("Change arguements\n");
-    return 1;
-  }
+  // if(!(argc == 3 && !strcmp(argv[1],"-i"))){
+  //   printf("Change arguements\n");
+  //   return 1;
+  // }
   
 
-  FILE *file=fopen(argv[2],"r");
-  if(file == NULL){
-    return 1;
-  }
-  int c;
-  while(( c = getc(file) )!= EOF){
-    if (c == '\n'){
-      num_lines++;
-    }
-  }
+  // FILE *file=fopen(argv[2],"r");
+  // if(file == NULL){
+  //   return 1;
+  // }
+  // int c;
+  // while(( c = getc(file) )!= EOF){
+  //   if (c == '\n'){
+  //     num_lines++;
+  //   }
+  // }
 
-  rewind(file);
+  // rewind(file);
         
 
-  Record recs[num_lines];
+  // Record recs[num_lines];
 
-  int reco_nums=0;
+  // int reco_nums=0;
 
-    while(
-      fscanf(file,"%d %s %s %d %s",&recs[reco_nums].id,recs[reco_nums].firstname,recs[reco_nums].lastname,&recs[reco_nums].postcode,recs[reco_nums].city)
-      !=EOF){
-        printRecord(recs[reco_nums]);
-        reco_nums++;
+  //   while(
+  //     fscanf(file,"%d %s %s %d %s",&recs[reco_nums].id,recs[reco_nums].firstname,recs[reco_nums].lastname,&recs[reco_nums].postcode,recs[reco_nums].city)
+  //     !=EOF){
+  //       printRecord(recs[reco_nums]);
+  //       reco_nums++;
 
-    }
+  //   }
   
 
 
-  fclose(file);
+  // fclose(file);
+  Record recs[15];
+  for (int i = 0; i < 15; i++){
+    recs[i] = randomRecord();
+  }
 
   BF_PrintError( HP_CreateFile(DB_FILE));
   
   HP_OpenFile(DB_FILE,&fileDesc);
 
-  for(int i=0;i<num_lines;i++){
+  for(int i=0;i<15;i++){
     HP_InsertEntry(fileDesc,recs[i]);
   }
-  Record rec;
   
-  HP_GetEntry(fileDesc,1,0,&rec);
-  printRecord(rec);
-  HP_GetEntry(fileDesc,2,3,&rec);
-  printRecord(rec);
+  // Record rec;
+  
+  // HP_GetEntry(fileDesc,1,0,&rec);
+  // printRecord(rec);
+  // HP_GetEntry(fileDesc,2,3,&rec);
+  // printRecord(rec);
 
-  int post=26221;
-  HP_PrintAllEntries(fileDesc,"firstname","Petros");
-  HP_PrintAllEntries(fileDesc,"id",NULL);
-  HP_PrintAllEntries(fileDesc,"postcode",&post);
+  // int post=26221;
+  // HP_PrintAllEntries(fileDesc,"firstname","Petros");
+  // HP_PrintAllEntries(fileDesc,"id",NULL);
+  // HP_PrintAllEntries(fileDesc,"postcode",&post);
 
-  HP_CloseFile(fileDesc);
+  // HP_CloseFile(fileDesc);
+
+  
 
   return EXIT_SUCCESS;
 }
