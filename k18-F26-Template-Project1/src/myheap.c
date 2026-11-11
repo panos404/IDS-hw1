@@ -29,42 +29,65 @@
  */
 
 int main(int argc, char *argv[]) {
-  int file;
-
-  // BF_Init(LRU);
-  BF_PrintError( HP_CreateFile("DBs/poutsa.txt"));
-  // BF_PrintError( HP_CreateFile("DBs/piss.txt"));
+  int fileDesc;
+  int num_lines=0;
   
-  // BF_PrintError( HP_CreateFile("DBs/idk.txt"));
-  // BF_PrintError( HP_CreateFile("DBs/idk2.txt"));
-  // BF_PrintError( HP_CreateFile("DBs/idk3.txt"));
-  // BF_Close();
-
-  // BF_Init(LRU);
-  // BF_PrintError(HP_OpenFile("DBs/piss.txt",&file2));
-  HP_OpenFile("DBs/poutsa.txt",&file);
-
-  Record rec = randomRecord();
-  Record rec2 = randomRecord();
-  printf("I put Record with id %d and name %s\n", rec.id, rec.firstname);
-  printf("\nLOOKING FOR:fds in main %d\n", file);
-  int p=0;
-  HP_InsertEntry(file, rec);
-  HP_InsertEntry(file, rec2);
-
-  // printf("files %d,%d\n",file,file2);
-  // BF_PrintError(HP_CloseFile(file));
-  Record getrec;
-  Record getrec2;
-  HP_GetEntry(file, 1, 0, &getrec);
-  HP_GetEntry(file, 1, 1, &getrec2);
-  // BF_PrintError(HP_CloseFile(file2));
-  printf("-For first record\n--Expected:%d, %s Got:%d, %s\n", rec.id, rec.firstname, getrec.id, getrec.firstname);
-  printf("-For second record\n--Expected:%d, %s Got:%d, %s\n", rec2.id, rec2.firstname, getrec2.id, getrec2.firstname);
-
-
-  // BF_Close();
+  if(!(argc == 3 && !strcmp(argv[1],"-i"))){
+    printf("Change arguements\n");
+    return 1;
+  }
   
+
+  FILE *file=fopen(argv[2],"r");
+  if(file == NULL){
+    return 1;
+  }
+  int c;
+  while(( c = getc(file) )!= EOF){
+    if (c == '\n'){
+      num_lines++;
+    }
+  }
+
+  rewind(file);
+        
+
+  Record recs[num_lines];
+
+  int reco_nums=0;
+
+    while(
+      fscanf(file,"%d %s %s %d %s",&recs[reco_nums].id,recs[reco_nums].firstname,recs[reco_nums].lastname,&recs[reco_nums].postcode,recs[reco_nums].city)
+      !=EOF){
+        printRecord(recs[reco_nums]);
+        reco_nums++;
+
+    }
+  
+
+
+  fclose(file);
+
+  BF_PrintError( HP_CreateFile(DB_FILE));
+  
+  HP_OpenFile(DB_FILE,&fileDesc);
+
+  for(int i=0;i<num_lines;i++){
+    HP_InsertEntry(fileDesc,recs[i]);
+  }
+  Record rec;
+  
+  HP_GetEntry(fileDesc,1,0,&rec);
+  printRecord(rec);
+  HP_GetEntry(fileDesc,2,3,&rec);
+  printRecord(rec);
+
+  int post=26221;
+  HP_PrintAllEntries(fileDesc,"firstname","Petros");
+  HP_PrintAllEntries(fileDesc,"id",NULL);
+  HP_PrintAllEntries(fileDesc,"postcode",&post);
+
+  HP_CloseFile(fileDesc);
 
   return EXIT_SUCCESS;
 }
