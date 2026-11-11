@@ -362,5 +362,6 @@ HP_ErrorCode HP_GetEntry(int fileDesc, int blockid, int position, Record *record
 HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   /* TODO: υλοποιήστε τον iterator. Η κατάσταση του (πού σταμάτησε η
      προηγούμενη κλήση) πρέπει να επιβιώνει ανάμεσα στις κλήσεις. */
-  return HP_ERROR;
+  
+  // αρχιζει απο το 
 }
