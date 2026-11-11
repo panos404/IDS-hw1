@@ -6,6 +6,7 @@
 #include "block_records.h"
 #include "hp_file.h"
 #include "record.h"
+#include "queue.h"
 
 HP_info metadata[BF_MAX_OPEN_FILES];  //array of metadata of open files
 int i = -1; //counter to get metadata for open file
@@ -108,6 +109,8 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   metadata[i].blockstaken = 0;
   strcpy(metadata[i].file_type, HP_FLAG);
   metadata[i].recs_last = 0;
+  metadata[i].iterator.bid = -1;
+  metadata[i].iterator.slot = -1;
 
   
 
@@ -363,5 +366,28 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   /* TODO: υλοποιήστε τον iterator. Η κατάσταση του (πού σταμάτησε η
      προηγούμενη κλήση) πρέπει να επιβιώνει ανάμεσα στις κλήσεις. */
   
-  // αρχιζει απο το 
+  // αρχιζει απο εκει που ειναι ο iterator
+  // εχει αρχικοποιηθει στο -1, -1 σε περιπτωση που δεν εχει χρησιμοποιηθει (?)
+  Queue itQue;
+  initializeQueue(&itQue);
+
+  // struct iterator με δυο ints σε block_id και slot στο id
+  // για το record που ψαξαμε τελευταιο
+
+  // Η HP_GetNextRecordWithID ανανεωνει τον iterator
+
+  // κανει walk απο την αρχη του αρχειου (εκτος metadata block)
+  // και double for loop αν φτασει στο τελος ενος block
+  // παει στο επομενο κλπ. Αν φτασει στο τελευταιο block 
+  // σε slot max_recs - 1 και δεν το εχει βρει σημαινει οτι δεν υπαρχει
+
+  // Αν καλεσουμε τη συναρτηση για αλλο value ξεκιναει απο την αρχη
+  
+  // Για overlapping κλησεις με διαφορετικα values πώς δεν θα ξεκιναει 
+  // απο την αρχη αν εχει κληθει για ιδιο value και πριν ;;;
+  // -> καπου κραταει τη θεση του iterator για καθε value που εχει δοθει
+  // -> array γινεται και να γραφει απο πανω
+  // global μεταβλητη για καλεσμενες values
+  // με hashtable δεν χρειαζεται αυτο
+  // θα γραφει παντα απο πανω απο ο,τι υπαρχει
 }

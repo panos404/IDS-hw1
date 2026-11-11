@@ -21,7 +21,7 @@ typedef enum HP_ErrorCode {
 
 
 typedef struct iterator{
-    int block_id;
+    int bid;
     int slot;
 } Iterator;
 

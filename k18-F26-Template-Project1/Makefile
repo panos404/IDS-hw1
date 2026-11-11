@@ -28,7 +28,7 @@ TARGETS       := $(MYHEAP_TARGET) $(BF_TARGET)
 
 # Object files
 COMMON_OBJS := $(OBJ_DIR)/record.o $(OBJ_DIR)/block_records.o
-MYHEAP_OBJS := $(COMMON_OBJS) $(OBJ_DIR)/hp_file.o $(OBJ_DIR)/myheap.o
+MYHEAP_OBJS := $(COMMON_OBJS) $(OBJ_DIR)/hp_file.o $(OBJ_DIR)/myheap.o $(OBJ_DIR)/queue.o
 BF_OBJS     := $(COMMON_OBJS) $(OBJ_DIR)/bf_main.o
 
 # Κάθε object ξαναμεταγλωττίζεται όταν αλλάξει οποιοδήποτε header
