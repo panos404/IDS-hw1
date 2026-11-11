@@ -85,6 +85,7 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   int file_desc;
   BF_Block *new_block;
   BF_Block_Init(&new_block);
+  printf("size of record slots: %d\n",RECORDS_PER_BLOCK);
   printf("before init %d files open\n", i);
   // if no other file is open, open the BF level
   if (i < 0)
@@ -279,7 +280,7 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
       BF_GetBlock(fileDesc,z,block);
       if (z == metadata[j].last_bid){
         printf("is last block: %d\n",z);
-        num_records = 1;//change, only for troubleshooting
+        num_records = metadata[j].recs_last;
       }
       for(int slot = 0;slot < num_records; slot++){//max_recs of block z need to be defined in entry
         printf("in slot: %d\n",slot);
@@ -296,10 +297,7 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
           printRecord(rec);
         }else if(value == NULL){
           printRecord(rec);
-        } else{
-          printf("error %s,%s,%s\n",fieldName,(char*)value,rec.city);
-          printRecord(rec);
-        }
+        } 
       }
       BF_UnpinBlock(block);
     }
