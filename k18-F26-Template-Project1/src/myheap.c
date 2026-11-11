@@ -38,21 +38,31 @@ int main(int argc, char *argv[]) {
   // BF_PrintError( HP_CreateFile("DBs/idk.txt"));
   // BF_PrintError( HP_CreateFile("DBs/idk2.txt"));
   // BF_PrintError( HP_CreateFile("DBs/idk3.txt"));
-  // // BF_Close();
+  // BF_Close();
 
   // BF_Init(LRU);
   // BF_PrintError(HP_OpenFile("DBs/piss.txt",&file2));
   HP_OpenFile("DBs/poutsa.txt",&file);
+
   Record rec = randomRecord();
+  Record rec2 = randomRecord();
+  printf("I put Record with id %d and name %s\n", rec.id, rec.firstname);
   printf("\nLOOKING FOR:fds in main %d\n", file);
   int p=0;
   HP_InsertEntry(file, rec);
-  HP_InsertEntry(file,randomRecord());
-  HP_InsertEntry(file,randomRecord());
+  HP_InsertEntry(file, rec2);
+
   // printf("files %d,%d\n",file,file2);
-  HP_PrintAllEntries(file,"id",&p);
-  BF_PrintError(HP_CloseFile(file));
+  // BF_PrintError(HP_CloseFile(file));
+  Record getrec;
+  Record getrec2;
+  HP_GetEntry(file, 1, 0, &getrec);
+  HP_GetEntry(file, 1, 1, &getrec2);
   // BF_PrintError(HP_CloseFile(file2));
+  printf("-For first record\n--Expected:%d, %s Got:%d, %s\n", rec.id, rec.firstname, getrec.id, getrec.firstname);
+  printf("-For second record\n--Expected:%d, %s Got:%d, %s\n", rec2.id, rec2.firstname, getrec2.id, getrec2.firstname);
+
+
   // BF_Close();
   
 

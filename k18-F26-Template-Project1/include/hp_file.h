@@ -22,7 +22,7 @@ typedef struct HP_info {
   /* TODO: συμπληρώστε τα πεδία που χρειάζεστε */
     char file_type[20];
     int last_bid;    //last block
-    int max_recs;
+    int recs_last;
     int fileDesc; 
     char fileName[100];//filename up to 100 chars
     int blockstaken;
