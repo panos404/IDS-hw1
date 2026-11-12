@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   int post=26221;
   printf("Entries w/ postcode: 26221: \n");
   HP_PrintAllEntries(fileDesc,"postcode",&post);
-  printf("\t==ENDDEMO-PrintAllEntries==\n");
+  printf("========ENDDEMO-PrintAllEntries==\n");
   
   printf("\n======== DEMO-PrintAllEntries name=petros ========\n");
   HP_PrintAllEntries(fileDesc,"firstname","Petros");
@@ -100,6 +100,7 @@ int main(int argc, char *argv[]) {
   printf("\n======== DEMO-GetEnry ========\n");
   Record rec;
   HP_GetEntry(fileDesc,2,4,&rec);
+  printf("...Pulling from block 2 | slot 4\n");
   printf("...Pulled record ");
   printRecord(rec);
   printf("======== ENDDEMO-GetEnry ========\n");
