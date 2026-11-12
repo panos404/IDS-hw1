@@ -393,7 +393,7 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   
   // find the correct hashed position
   int val = *(int*)value;
-  int key = val % 50;
+  int key = val % 25;
   // extreact the value in the position in hashtable
   int idInTable = metadata[mdpos].iterHTable[key].valueid;
 
