@@ -217,8 +217,6 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
   // και αποθηκευσε την τιμη του
   if (bid == -1){
     CALL_BF(BF_AllocateBlock(fileDesc, block));
-    // fill me dummy records 
-    blockInitSlots(block);
     
     // get the position of the new block (the new first free)
     BF_GetBlockCounter(fileDesc, &bid);
