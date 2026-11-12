@@ -25,8 +25,6 @@ typedef struct HP_info {
     int recs_last;
     int fileDesc; 
     char fileName[100];//filename up to 100 chars
-    int blockstaken;
-    int first_free_block;
 } HP_info;
 
 /* Δημιουργεί και αρχικοποιεί ένα άδειο αρχείο σωρού με όνομα fileName. Αν το

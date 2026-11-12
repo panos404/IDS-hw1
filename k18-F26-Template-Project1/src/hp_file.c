@@ -111,8 +111,6 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   
   metadata[i].fileDesc = file_desc;
   metadata[i].last_bid = -1;
-  metadata[i].first_free_block = 0;
-  metadata[i].blockstaken = 0;
   strcpy(metadata[i].file_type, HP_FLAG);
   metadata[i].recs_last = 0;
 
@@ -148,6 +146,10 @@ HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
     get_metadata(*fileDesc, 0, &metadata[i]);
     if(strcmp(metadata[i].file_type ,HP_FLAG)){
       printf("Not a heap file.\n");
+      BF_CloseFile(fileDesc);
+      i--;
+      if(i < 0)
+       BF_Close();
       return HP_ERROR;
     }
   
