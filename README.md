@@ -78,7 +78,7 @@ blockGetRecord gets called, without checking the return value, because it is gua
 For this function an iterator is needed, as said in the assignment. The implementation I went with uses a simple (semi-working) hashtable, where the values given (ids) are hashed to keys for easy access. It doesn't have a replacement policy or rehashing, when a collision happens it just overwrites and reinitializes the iterator. That guarantees trivial access and maintenance, but makes the hashtable kinda faulty, meaning two entries might collide and one overwrites the other, while many slots in the table are empty. Nontheless, for such small records bulk as the one provided, I think it is sufficient.
 
 
-##### Quick look in hashEntry and iterator structs
+#### Quick look in hashEntry and iterator structs
 **hashEntryL** holds the unhashed value that is provided. It is used for detecting wheter an update on the slot of the table is a collision with another value or an update to the saved one.
 **iterator:** the iterator is nothing more than two ints pointing to a block_id and a slot :P.
 
