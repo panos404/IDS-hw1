@@ -120,6 +120,9 @@ int main(int argc, char *argv[]) {
   printf("...Calling again for id: %d\n", id1);
   HP_GetNextRecordWithID(fileDesc, &rec, &id1);
   printRecord(rec);
+  printf("...Calling function for id:%d\n", id2);
+  HP_GetNextRecordWithID(fileDesc, &rec, &id2);
+  printRecord(rec);
   printf("======== ENDDEMO-GetNextRecordWithId ========\n");
   
 
