@@ -34,4 +34,14 @@ If its a heap file we also add to the newly saved globally metadata the new file
 
 First we have to find the metadata for the open file using the find_hp_info function.
 If the file does not exist it return a negative position and the close file function knows to exit w/ error.
-If the file IS open the helper function returns its metadata position in the global array
+If the file IS open the helper function returns its metadata position in the global array so we can access them.
+We replace them with the last metadata  of the array (no empty space in array) and decrease the open file counter by one.
+If this is the finale file thats open we close the BF level to save everything up until this point.
+
+### (5) HP_PrintAllEntries
+
+We find the metadata of the heap file (find_hp_info) if it exists.
+Then we itirate each block and the ammount of records they each have which is RECORDS_PER_BLOCK for all available blocks (till last_bid) EXCEPT the last that could have <= RECORDS_PER_BLOCK so if we're itirating the last block we loop till < last_recs from the metadata.
+Inside the loop we check what field the user is asking for and if the record's value matches the given value and we print records that match the condition.
+If the value is NULL we print the record no matter what.
+
