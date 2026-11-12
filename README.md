@@ -80,10 +80,12 @@ For this function an iterator is needed, as said in the assignment. The implemen
 
 #### Quick look in hashEntry and iterator structs
 **hashEntryL** holds the unhashed value that is provided. It is used for detecting wheter an update on the slot of the table is a collision with another value or an update to the saved one.
+
+
 **iterator:** the iterator is nothing more than two ints pointing to a block_id and a slot :P.
 
 
-The checking mentioned happens, startBid gets initialized at 1 (cause 0 is metadata block) and then if the value has already been searched, the starting points are updated.
+The checking mentioned previously takes place, startBid gets initialized at 1 (cause 0 is metadata block) and then if the value has already been searched, the starting points are updated.
 
 
 Starting point for the iterator of records is either the next of where it was left of (to not pull the same previous record again) if we are still in the block we left off previously or 0 (iterating new block). The ending point is either recs_last if we are iterating the last block, or the maximum if iterating the full previous ones.
