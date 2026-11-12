@@ -94,7 +94,7 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
     CALL_BF(BF_Init(LRU));
 
   if(BF_CreateFile(fileName) == BF_FILE_ALREADY_EXISTS){
-    perror("File already exists.\n");
+    perror("Error");
     BF_Block_Destroy(&new_block);
     if(i < 0){
       // printf("close bf in already created file\n");
@@ -128,10 +128,9 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   BF_UnpinBlock(new_block);
   BF_Block_Destroy(&new_block);
   CALL_BF(BF_CloseFile(file_desc));
-
+  printf("Successfully create new file\n");
   if(i < 0)
     CALL_BF(BF_Close());
-
   return HP_OK;
 }
 
@@ -154,7 +153,8 @@ HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
       printf("Not a heap file.\n");
       return HP_ERROR;
     }
-  
+    
+    printf("...Opened file %s with fds %d\n", fileName, *fileDesc);
     metadata[i].fileDesc = *fileDesc;
     
   return HP_OK;
@@ -247,6 +247,7 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
   }
 
   int slot = metadata[mdpos].recs_last;
+  printf("...Putting record in block %d | slot %d\n", metadata[mdpos].last_bid, slot);
   blockSetRecord(block, slot, record);
   metadata[mdpos].recs_last ++;
   // records in the blocks
@@ -427,10 +428,10 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
 
   Record rec; //to pull the records
   bool found = false;
-  int ret;
+
   // cleaned code
 
-  printf("StartBid is: %d\n", startBid);
+  // printf("StartBid is: %d\n", startBid);
 
   for (bIter = startBid; bIter <= metadata[mdpos].last_bid && !found; bIter++){
     
@@ -438,12 +439,12 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
     int recEnd = (bIter == metadata[mdpos].last_bid) ? metadata[mdpos].recs_last : RECORDS_PER_BLOCK;
 
     for (rIter = recStart; rIter < recEnd; rIter++){
-      printf("In Loop...Getting data from block %d | record %d ", bIter, rIter);
+      // printf("In Loop...Getting data from block %d | record %d ", bIter, rIter);
 
       // HP_GetEntry(fileDesc, bIter, rIter, &rec);
       BF_GetBlock(fileDesc, bIter, block);
-      ret = blockGetRecord(block, rIter, &rec);
-      printRecord(rec);
+      blockGetRecord(block, rIter, &rec);
+      // printRecord(rec);
       if (rec.id == val){
         found = true;
         *(record) = rec;
@@ -452,7 +453,7 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
     }
     BF_UnpinBlock(block);
   }
-  printf("Out of Loop...Stopped in b:%d r:%d\n", bIter - 1, rIter);
+  // printf("Out of Loop...Stopped in b:%d r:%d\n", bIter - 1, rIter);
 
   if (!found){
     printf("Entry with id %d not found in records\n", val);
