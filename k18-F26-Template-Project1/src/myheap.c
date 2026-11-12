@@ -67,37 +67,42 @@ int main(int argc, char *argv[]) {
 
 
   // fclose(file);
-  Record recs[15];
-  for (int i = 0; i < 15; i++){
+  Record recs[24];
+  for (int i = 0; i < 24; i++){
     recs[i] = randomRecord();
+    printRecord(recs[i]);
   }
 
   BF_PrintError( HP_CreateFile(DB_FILE));
   
   HP_OpenFile(DB_FILE,&fileDesc);
 
-  for(int i=0;i<15;i++){
+  for(int i=0;i<24;i++){
     HP_InsertEntry(fileDesc,recs[i]);
   }
   
   // Record rec;
-  HP_InsertEntry(fileDesc, recs[2]);
+  // HP_InsertEntry(fileDesc, recs[2]);
 
   int id = 2;
   Record getrec;
-  HP_GetNextRecordWithID(fileDesc, &getrec, &recs[2].id);
+  // HP_GetNextRecordWithID(fileDesc, &getrec, &recs[2].id);
   HP_PrintAllEntries(fileDesc, "id", &id);
-  printRecord(recs[2]);
+  // printRecord(recs[2]);
   
-  // HP_GetEntry(fileDesc,1,0,&rec);
-  // printRecord(rec);
-  // HP_GetEntry(fileDesc,2,3,&rec);
-  // printRecord(rec);
+  // HP_GetEntry(fileDesc,1,4,&getrec);
+  // printRecord(getrec);
+  // HP_GetEntry(fileDesc,2,3,&getrec);
+  // printRecord(getrec);
+  
+  // HP_GetEntry(fileDesc, 3, 1,&getrec);
+  // printRecord(getrec);
 
   // int post=26221;
   // HP_PrintAllEntries(fileDesc,"firstname","Petros");
   // HP_PrintAllEntries(fileDesc,"id",NULL);
   // HP_PrintAllEntries(fileDesc,"postcode",&post);
+
 
   // HP_CloseFile(fileDesc);
 

@@ -31,6 +31,8 @@ HP_ErrorCode set_metadata(int fileDesc, int slot, struct HP_info info){
   BF_Block *block;
   BF_Block_Init(&block);
   // printf("file: %d\n",fileDesc);
+  printf("Writing metadata: last_bid=%d, recs_last=%d\n",
+    info.last_bid, info.recs_last);
   CALL_BF(BF_GetBlock(fileDesc, 0, block));
 
   // printf("The metadata is:\n %s, %d, %d", 
@@ -57,11 +59,11 @@ HP_ErrorCode get_metadata(int fileDesc, int slot, struct HP_info *info){
 
   char *data = BF_Block_GetData(block);
 
-  if (!memcpy(info, data + slot, sizeof(HP_info)))
+  if (!memcpy(info, data + slot *sizeof(HP_info), sizeof(HP_info)))
     return HP_EOF;
 
   //apodesmeusi
- // CALL_BF(BF_UnpinBlock(block));//need pinned the meta data block
+  CALL_BF(BF_UnpinBlock(block));//need pinned the meta data block
   BF_Block_Destroy(&block);
 
   return HP_OK;
@@ -69,10 +71,10 @@ HP_ErrorCode get_metadata(int fileDesc, int slot, struct HP_info *info){
 
 int find_hp_info(int fileDesc){//finds metadata hp info struct for a open file
   for (int j=0;j <= i;j++){
-    printf("There are %d files open\n", i);
-    printf("find %d,%d\n",metadata[j].fileDesc,fileDesc);
+    // printf("There are %d files open\n", i);
+    // printf("find %d,%d\n",metadata[j].fileDesc,fileDesc);
     if (metadata[j].fileDesc == fileDesc){
-      printf("returning %d\n", j);
+      // printf("returning %d\n", j);
       return j;
     }
   }
@@ -104,9 +106,7 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   strcpy(metadata[i].fileName, fileName);
   
   metadata[i].fileDesc = file_desc;
-  metadata[i].last_bid = 0;
-  metadata[i].first_free_block = 0;
-  metadata[i].blockstaken = 0;
+  metadata[i].last_bid = -1;
   strcpy(metadata[i].file_type, HP_FLAG);
   metadata[i].recs_last = 0;
 
@@ -119,11 +119,11 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   
 
   // put metadata block
+  BF_UnpinBlock(new_block);
   set_metadata(file_desc, 0, metadata[i]);
   printf("I Create: created file %s with id %d and %d last_recs\n",
   metadata[i].fileName, metadata[i].fileDesc, metadata[i].recs_last);
   i--;
-  BF_UnpinBlock(new_block);
   BF_Block_Destroy(&new_block);
   CALL_BF(BF_CloseFile(file_desc));
   // printf("In CreateFile %d open files\n", i);
@@ -194,9 +194,12 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
   // και εχουμε το fileDesc
   // οποτε παιρνουμε τα metadata του file
 
-  // get position for metadata on the array
+
   int mdpos = find_hp_info(fileDesc);
-  printf("FROM HP INFO:mdpos in insert %d\n", mdpos);
+  printf("INSERT: id=%d, mdpos=%d, fd=%d, last_bid=%d, recs_last=%d\n",
+    record.id, mdpos, fileDesc,
+    metadata[mdpos].last_bid,
+    metadata[mdpos].recs_last);
   if (mdpos == -1){
     printf("You must open the file first\n");
     return HP_ERROR;
@@ -208,79 +211,65 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
 
   // get block_id of the available block in the file
   int bid = metadata[mdpos].last_bid;
-  printf("First available block is %d\n", bid);
-
-  // αν ειναι πρωτη κληση
-  if (bid <= 0){
+  // αν δεν υπαρχει free block(-1) φτιαξε ενα καινουργιο
+  // και αποθηκευσε την τιμη του
+  if (bid == -1){
+   
     CALL_BF(BF_AllocateBlock(fileDesc, block));
-    // fill me dummy records 
-    blockInitSlots(block);
     
-    // get the position of the new block (the new first free)
     BF_GetBlockCounter(fileDesc, &bid);
     bid--;
+    printf("Allocated block ID actually is: %d\n", bid);
+    printf("!!!!!!!!!!!!!!\n"); 
 
     // put it back in metadata table
     metadata[mdpos].last_bid = bid;
+    metadata[mdpos].recs_last = 0;
   }
   else{
     // αν υπαρχει ηδη μπλοκ παρτο 
-    BF_GetBlock(fileDesc, bid, block);
+    CALL_BF(BF_GetBlock(fileDesc, bid, block));
   }
 
-  printf("In InsertEntry: before G\n");
-  // blockGetSlot(block, &slot);
-  printf("-- block %d has %d records in\n", metadata[mdpos].last_bid, metadata[mdpos].recs_last);
-  // αν υπαρχει block που εχει χωρο βαλτο εκει
-  
-  // αν οχι φτιαξε καινουργιο block και 
-  
-  
-  // στην εισαγωγη ελεγχει αν γεμιζει το block
-  
-  printf("In InsertEntry: putting in slot: %d in block %d\n", metadata[mdpos].recs_last, bid);
-  
-  int slot;
-  slot = metadata[mdpos].recs_last; 
- 
-  int ret;  // grab return value
-
-
-  ret = blockSetRecord(block, slot, record);
+  printf("BEFORE INSERT: last_bid=%d, recs_last=%d\n",
+    metadata[mdpos].last_bid,
+    metadata[mdpos].recs_last);
+  // int ret = blockSetRecord(block, slot, record);
   // printf("In InsertEntry: h setrec gyrnaei: %d\n", ret);
 
-  // αν το block εχει γεμισει (ret=-1)
-  if (ret == -1){
-    // φτιαξε καινουργιο block
-    // blockInitSlots(block);
-    printf("In InsertEntry: Block %d got full after insertion, moving to block %d", metadata[mdpos].last_bid, metadata[mdpos].last_bid + 1);
-    BF_Block *new_block;
-    BF_Block_Init(&new_block);
-    BF_AllocateBlock(fileDesc, new_block);
-    metadata[mdpos].last_bid ++;
+  if (metadata[mdpos].recs_last == RECORDS_PER_BLOCK){
+    printf("FULL BLOCK, allocating new block\n");
+    BF_Block_SetDirty(block);
+    BF_UnpinBlock(block);
+    BF_Block_Destroy(&block);
+
+    BF_Block_Init(&block);
+    CALL_BF(BF_AllocateBlock(fileDesc, block));
+
+    BF_GetBlockCounter(fileDesc, &bid);
+    bid--;
+
+    metadata[mdpos].last_bid = bid;
     metadata[mdpos].recs_last = 0;
-
-    slot = metadata[mdpos].recs_last;
-    // set the record there
-    blockSetRecord(block, slot, record);
-
-    BF_Block_SetDirty(new_block);
-    BF_Block_Destroy(&new_block);
-    BF_UnpinBlock(new_block);
   }
 
-  // records in the last block
-  metadata[mdpos].recs_last++;
-  printf("In InsertEntry: after insertion to teleutaio block exei %d recs\n", metadata[mdpos].recs_last);
-  printf("PRIN TO METADATA\n");
-  set_metadata(fileDesc, 0, metadata[mdpos]);
-  printf("After setting metadata in INSentry %d\n", metadata[mdpos].last_bid);
+  int slot = metadata[mdpos].recs_last;
+  blockSetRecord(block, slot, record);
 
-  // au revoir
-  BF_Block_SetDirty(block);
+  // TEST
+  Record test;
+  blockGetRecord(block, slot, &test);
+  printf("VERIFY ID %d: block=%d slot=%d\n",
+      test.id, bid, slot);
+  //
+
+  // records in the blocks
+  metadata[mdpos].recs_last ++;
   BF_UnpinBlock(block);
+
+  set_metadata(fileDesc, 0, metadata[mdpos]);
   BF_Block_Destroy(&block);
-  return HP_ERROR;
+  return HP_OK;
 }
 
 HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
@@ -305,6 +294,8 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
       for(int slot = 0;slot < num_records; slot++){//max_recs of block z need to be defined in entry
         // printf("in slot: %d\n",slot);
         blockGetRecord(block,slot,&rec);//using metadata to know the way records are saveed in the block
+        printf("In block %d | Slot %d", z, slot);
+        printRecord(rec);
         if(!strcmp(fieldName,"city") && !strcmp(rec.city, (char*)value)){
           printRecord(rec);
         }else if (!strcmp(fieldName, "firstname") && !strcmp(rec.firstname, (char*)value)){
@@ -475,7 +466,6 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   for (bIter = startBid; bIter <= metadata[mdpos].last_bid && !found; bIter++){
     
     int recStart = (bIter == startBid) ? startRid : 0; 
-
     int recEnd = (bIter == metadata[mdpos].last_bid) ? metadata[mdpos].recs_last : RECORDS_PER_BLOCK;
 
     for (rIter = recStart; rIter < recEnd; rIter++){

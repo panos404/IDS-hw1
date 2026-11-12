@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 
 #include "block_records.h"
 
@@ -9,6 +10,8 @@ int blockSetRecord(BF_Block *block, int slot, Record record) {
   char *data = BF_Block_GetData(block);
 
   /* Αντιγραφή της εγγραφής στη θέση slot του block */
+  printf("In blockSetRecord...writing in slot %d", slot);
+  printRecord(record);
   memcpy(data + slot * sizeof(Record), &record, sizeof(Record));
 
   /* Τα περιεχόμενα του block άλλαξαν, οπότε πρέπει κάποια στιγμή να γραφτούν
