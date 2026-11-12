@@ -82,22 +82,29 @@ int find_hp_info(int fileDesc){//finds metadata hp info struct for a open file
 HP_ErrorCode HP_CreateFile(const char *fileName) {
   /* TODO: δημιουργήστε το αρχείο, δεσμεύστε το πρώτο μπλοκ και αποθηκεύστε
      εκεί ένα στιγμιότυπο της HP_info */
+
+  
   int file_desc;
   BF_Block *new_block;
   BF_Block_Init(&new_block);
-  printf("size of record slots: %d\n",RECORDS_PER_BLOCK);
-  printf("before init %d files open\n", i);
+
   // if no other file is open, open the BF level
   if (i < 0)
     CALL_BF(BF_Init(LRU));
 
-  CALL_BF(BF_CreateFile(fileName));
+  if(BF_CreateFile(fileName) == BF_FILE_ALREADY_EXISTS){
+    perror("File already exists.\n");
+    BF_Block_Destroy(&new_block);
+    if(i < 0){
+      // printf("close bf in already created file\n");
+      BF_Close();
+    }
+    return HP_ERROR;
+  }
   CALL_BF(BF_OpenFile(fileName, &file_desc));
   i++;
   
   CALL_BF(BF_AllocateBlock(file_desc, new_block));
-
-  printf("after alloc %d, %s\n",i,fileName);
 
   // initiliaze metadata
   strcpy(metadata[i].fileName, fileName);
@@ -113,16 +120,14 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
 
   // put metadata block
   set_metadata(file_desc, 0, metadata[i]);
-  printf("I Create: created file %s with id %d and %d last_recs\n",
-  metadata[i].fileName, metadata[i].fileDesc, metadata[i].recs_last);
   i--;
   BF_UnpinBlock(new_block);
   BF_Block_Destroy(&new_block);
   CALL_BF(BF_CloseFile(file_desc));
-  // printf("In CreateFile %d open files\n", i);
+
   if(i < 0)
     CALL_BF(BF_Close());
-  // printf("end1\n");
+
   return HP_OK;
 }
 
@@ -132,23 +137,22 @@ HP_ErrorCode HP_OpenFile(const char *fileName, int *fileDesc) {
     if(i<0)
      CALL_BF(BF_Init(LRU));
 
-    CALL_BF(BF_OpenFile(fileName,fileDesc));
-    printf("file in open: %d",*fileDesc);
+    if(BF_OpenFile(fileName,fileDesc) == BF_ERROR){
+      printf("File does not exist.\n");
+      if(i < 0)
+       BF_Close();
+      return HP_ERROR;
+    }
     i++;
 
     get_metadata(*fileDesc, 0, &metadata[i]);
-    printf("file in open: %s\n",metadata[i].fileName);
     if(strcmp(metadata[i].file_type ,HP_FLAG)){
-      printf("error with strcmp\n");
+      printf("Not a heap file.\n");
       return HP_ERROR;
     }
-    printf("In Open: fds is %d\n", *fileDesc);
+  
     metadata[i].fileDesc = *fileDesc;
-    printf("In OpenFile %d open files\n", i);
-    printf("In Open: the file %s with id %d has last_recs %d\n", metadata[i].fileName,
-      metadata[i].fileDesc, metadata[i].recs_last);
     
-    // CALL_BF(BF_Close());
   return HP_OK;
 }
 
@@ -157,7 +161,10 @@ HP_ErrorCode HP_CloseFile(int fileDesc) {
   // CALL_BF(BF_Init(LRU));
 
   int j = find_hp_info(fileDesc);
-  
+  if (j == -1){
+    printf("You must open the file first\n");
+    return HP_ERROR;
+  }
   // BF_Block *block;
   // BF_Block_Init(&block);
   // for(int z = 0;z < metadata[j].num_id; z++){
@@ -189,7 +196,7 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
 
   // get position for metadata on the array
   int mdpos = find_hp_info(fileDesc);
-  // printf("FROM HP INFO:mdpos in insert %d\n", mdpos);
+
   if (mdpos == -1){
     printf("You must open the file first\n");
     return HP_ERROR;
@@ -244,7 +251,7 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
   BF_Block_SetDirty(block);
   BF_UnpinBlock(block);
   BF_Block_Destroy(&block);
-  return HP_ERROR;
+  return HP_OK;
 }
 
 HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
@@ -256,6 +263,12 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
 
     //find metadata
     int j = find_hp_info(fileDesc);
+    if (j == -1){
+     printf("You must open the file first\n");
+      BF_Block_Destroy(&block);
+      return HP_ERROR;
+    
+    }
     int num_records=RECORDS_PER_BLOCK;
 
     //itirate till last active block except metadata block
@@ -263,15 +276,16 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
     for(int z = 1;z <= metadata[j].last_bid;z++){
       BF_GetBlock(fileDesc,z,block);
       if (z == metadata[j].last_bid){
-        // printf("is last block: %d\n",z);
+
         num_records = metadata[j].recs_last;
       }
       for(int slot = 0;slot < num_records; slot++){//max_recs of block z need to be defined in entry
-        // printf("in slot: %d\n",slot);
+
         blockGetRecord(block,slot,&rec);//using metadata to know the way records are saveed in the block
-        printf("Block %d | Slot %d", z, slot);
-        printRecord(rec);
-        if(!strcmp(fieldName,"city") && !strcmp(rec.city, (char*)value)){
+        if(value == NULL){
+          printf("Block: %d,Slot: %d",z,slot);
+          printRecord(rec);
+        } else if(!strcmp(fieldName,"city") && !strcmp(rec.city, (char*)value)){
           printRecord(rec);
         }else if (!strcmp(fieldName, "firstname") && !strcmp(rec.firstname, (char*)value)){
           printRecord(rec);
@@ -281,14 +295,12 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
           printRecord(rec);
         }else if(!strcmp(fieldName ,"id") && rec.id == *(int*)value){
           printRecord(rec);
-        }else if(value == NULL){
-          printRecord(rec);
-        } 
+        };
       }
       BF_UnpinBlock(block);
     }
     BF_Block_Destroy(&block);
-  return HP_ERROR;
+  return HP_OK;
 }
 
 HP_ErrorCode HP_GetEntry(int fileDesc, int blockid, int position, Record *record) {
@@ -336,13 +348,12 @@ HP_ErrorCode HP_GetEntry(int fileDesc, int blockid, int position, Record *record
   }
   
   blockGetRecord(block, position, record);
-  printf("Returned record from block %d in position %d\n", blockid, position);
   // if (record->id == -1){
   //   record not found
   // }
   BF_UnpinBlock(block);
   BF_Block_Destroy(&block);
-  return HP_ERROR;
+  return HP_OK;
 }
 
 HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
