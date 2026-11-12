@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   
-
+  printf("Opening insertion file\n");
   FILE *file=fopen(argv[2],"r");
   if(file == NULL){
     return 1;
@@ -49,70 +49,80 @@ int main(int argc, char *argv[]) {
       num_lines++;
     }
   }
-
   rewind(file);
-        
-
   Record recs[num_lines];
 
   int reco_nums=0;
-
+  printf("Pulling records...\n");
     while(
       fscanf(file,"%d %s %s %d %s",&recs[reco_nums].id,recs[reco_nums].firstname,recs[reco_nums].lastname,&recs[reco_nums].postcode,recs[reco_nums].city)
       !=EOF){
         // printRecord(recs[reco_nums]);
         reco_nums++;
-
     }
   
-
-
+  printf("Closing insertion file, pulled %d records\n", reco_nums);
   fclose(file);
-  // Record recs[50];
-  // for (int i=0; i < 50; i++){
-  //   recs[i] = randomRecord();
-  // }
-
+  
+  //CreateFile
+  printf("\n======== DEMO-CreateFile ========\n");
   HP_CreateFile(DB_FILE);
-  
-  
-  HP_OpenFile(DB_FILE,&fileDesc);
   HP_CreateFile("DBs/newfile.db");
+  printf("======== ENDDEMO-CreateFile ========\n");
 
+  // OpenFile
+  printf("\n======== DEMO-OpenFile ========\n");
+  HP_OpenFile(DB_FILE, &fileDesc);
+  HP_OpenFile("DBs/newfile.db", &fileDesc2);
+  printf("======== ENDDEMO-OpenFile ========\n");
+
+  printf("\n======== DEMO-InsertEntry ========\n");
   for(int i=0;i<num_lines;i++){
     HP_InsertEntry(fileDesc,recs[i]);
   }
-  Record rec;
-  
-  HP_GetEntry(fileDesc,1,0,&rec);
-  printf("Record w/ block: 1 and slot:0 \n");
-  printRecord(rec);
-  HP_GetEntry(fileDesc,2,3,&rec);
-  printf("Record w/ block: 2 and slot:3 \n");
-  printRecord(rec);
+  printf("======== ENDDEMO_InsertEntry ========\n");
 
-  Record r = randomRecord();
-  printRecord(r);
-  HP_OpenFile("DBs/newfile.db",&fileDesc2);
-  HP_InsertEntry(fileDesc2,r);
-
-  int post=26221;
-  printf("Entries w/ name: Petros: \n");
-  HP_PrintAllEntries(fileDesc,"firstname","Petros");
-  printf("All Entries: ");
+  printf("\n======== DEMO PrintAllEntries id NULL ========\n");
   HP_PrintAllEntries(fileDesc,"id",NULL);
+  printf("======== ENDDEMO-PrintAllEntries ========\n");
+
+  printf("\n======== DEMO-PrintAllEntries post=26221 ========\n");
+  int post=26221;
   printf("Entries w/ postcode: 26221: \n");
   HP_PrintAllEntries(fileDesc,"postcode",&post);
+  printf("\t==ENDDEMO-PrintAllEntries==\n");
+  
+  printf("\n======== DEMO-PrintAllEntries name=petros ========\n");
+  HP_PrintAllEntries(fileDesc,"firstname","Petros");
+  printf("======== ENDDEMO-PrintAllEntries ========\n");
+  
+
+  printf("\n======== DEMO-GetEnry ========\n");
+  Record rec;
+  HP_GetEntry(fileDesc,2,4,&rec);
+  printf("...Pulled record ");
+  printRecord(rec);
+  printf("======== ENDDEMO-GetEnry ========\n");
+
+  printf("\n======== DEMO-GetNextRecordWithId ========\n");
+  int id1 = 203;
+  int id2 = 151;
+  printf("...Calling function for id:%d\n", id1);
+  HP_GetNextRecordWithID(fileDesc, &rec, &id1);
+  printRecord(rec);
+  printf("...Calling again for id:%d\n", id1);
+  HP_GetNextRecordWithID(fileDesc, &rec, &id1);
+  printRecord(rec);
+  printf("...Calling function for id:%d\n", id2);
+  HP_GetNextRecordWithID(fileDesc, &rec, &id2);
+  printRecord(rec);
+  printf("...Calling again for id: %d\n", id1);
+  HP_GetNextRecordWithID(fileDesc, &rec, &id1);
+  printRecord(rec);
+  printf("======== ENDDEMO-GetNextRecordWithId ========\n");
+  
 
   HP_CloseFile(fileDesc);
-
-  printf("file2 first entry: ");
-  HP_GetEntry(fileDesc2,1,0,&r);
-  printRecord(r);
-
-  printf("file2 all entries: \n");
-  HP_PrintAllEntries(fileDesc2,"firstname",NULL);
-
   HP_CloseFile(fileDesc2);
   return EXIT_SUCCESS;
 }
