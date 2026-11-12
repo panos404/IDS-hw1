@@ -82,7 +82,15 @@ int main(int argc, char *argv[]) {
   for(int i=0;i<num_lines;i++){
     HP_InsertEntry(fileDesc,recs[i]);
   }
+  for(int i=0;i<5;i++){
+    recs[i+5].id = i;
+    HP_InsertEntry(fileDesc,recs[i+5]);
+  }
   Record rec;
+
+  for(int i=0;i<5;i++){
+    HP_InsertEntry(fileDesc,recs[i]);
+  }
   
   HP_GetEntry(fileDesc,1,0,&rec);
   printf("Record w/ block: 1 and slot:0 \n");
@@ -103,6 +111,7 @@ int main(int argc, char *argv[]) {
   HP_PrintAllEntries(fileDesc,"id",NULL);
   printf("Entries w/ postcode: 26221: \n");
   HP_PrintAllEntries(fileDesc,"postcode",&post);
+
 
   HP_CloseFile(fileDesc);
 
