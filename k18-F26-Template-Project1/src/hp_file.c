@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "bf.h"
 #include "block_records.h"
@@ -112,7 +113,7 @@ HP_ErrorCode HP_CreateFile(const char *fileName) {
   // initialize the hashtable
   for (int j=0; j < 25; j++){
     metadata[i].iterHTable[j].valueid = -1; //doesn't correspond to value
-    metadata[i].iterHTable[j].iterator.bid = 0;
+    metadata[i].iterHTable[j].iterator.bid = 1;
     metadata[i].iterHTable[j].iterator.slot = 0;
   }
   
@@ -246,7 +247,7 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
 
 
   ret = blockSetRecord(block, slot, record);
-  printf("In InsertEntry: h setrec gyrnaei: %d\n", ret);
+  // printf("In InsertEntry: h setrec gyrnaei: %d\n", ret);
 
   // αν το block εχει γεμισει (ret=-1)
   if (ret == -1){
@@ -270,6 +271,7 @@ HP_ErrorCode HP_InsertEntry(int fileDesc, Record record) {
 
   // records in the last block
   metadata[mdpos].recs_last++;
+  printf("In InsertEntry: after insertion to teleutaio block exei %d recs\n", metadata[mdpos].recs_last);
   printf("PRIN TO METADATA\n");
   set_metadata(fileDesc, 0, metadata[mdpos]);
   printf("After setting metadata in INSentry %d\n", metadata[mdpos].last_bid);
@@ -293,15 +295,15 @@ HP_ErrorCode HP_PrintAllEntries(int fileDesc, char *fieldName, void *value) {
     int num_records=RECORDS_PER_BLOCK;
 
     //itirate till last active block except metadata block
-    printf("last block: %d\n",metadata[j].last_bid);
+    // printf("last block: %d\n",metadata[j].last_bid);
     for(int z = 1;z <= metadata[j].last_bid;z++){
       BF_GetBlock(fileDesc,z,block);
       if (z == metadata[j].last_bid){
-        printf("is last block: %d\n",z);
+        // printf("is last block: %d\n",z);
         num_records = metadata[j].recs_last;
       }
       for(int slot = 0;slot < num_records; slot++){//max_recs of block z need to be defined in entry
-        printf("in slot: %d\n",slot);
+        // printf("in slot: %d\n",slot);
         blockGetRecord(block,slot,&rec);//using metadata to know the way records are saveed in the block
         if(!strcmp(fieldName,"city") && !strcmp(rec.city, (char*)value)){
           printRecord(rec);
@@ -408,16 +410,11 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   int mdpos = find_hp_info(fileDesc);
   
   // find the correct hashed position
-  int key = (int)value % 50;
+  int val = *(int*)value;
+  int key = val % 50;
   // extreact the value in the position in hashtable
   int idInTable = metadata[mdpos].iterHTable[key].valueid;
 
-  // αν δεν εχει value
-  if (idInTable == -1){
-    metadata[mdpos].iterHTable[key].valueid = (int)value;
-    // αρχισε iterate απο την αρχη
-    // αποθηκευσε το iterator στο σωστο σημειο
-  }
 
   // αν εχει αλλο value
   //-- γραψε απο πανω
@@ -429,6 +426,76 @@ HP_ErrorCode HP_GetNextRecordWithID(int fileDesc, Record *record, void *value) {
   //-- αποθηκευσε το καινουργιο position
 
   // αρα αρχιζει απο την αρχη παντα
-  // εκτος αν εχει το ιδιο value
+  // εκτος αν εχει το ιδιο value στο hashtable
+  int startBid = 1;
+  int startRid = 0;
 
+  if (idInTable == val){
+    startBid = metadata[mdpos].iterHTable[key].iterator.bid;
+    startRid = metadata[mdpos].iterHTable[key].iterator.slot;
+  }
+  else
+    metadata[mdpos].iterHTable[key].valueid = val;
+
+  // start iterating?
+  int bIter;  // block iterator
+  int rIter;  //record iterateor
+  BF_Block *block;
+  BF_Block_Init(&block);
+
+  Record rec; //to pull the records
+  bool found = false;
+
+  // iterates all the full blocks (dld except the last one)
+  // for (bIter = startBid; bIter <= metadata[mdpos].last_bid && !found; bIter++){
+  //   if (bIter == metadata[mdpos].last_bid){
+  //     for (rIter = startRid; rIter <= metadata[mdpos].recs_last; rIter++){
+  //       printf("In Loop: Getting data from Block %d, Slot %d\n", bIter, rIter);
+  //       HP_GetEntry(fileDesc, bIter, rIter, &rec);
+  //       if (rec.id == val){
+  //         found = true;
+  //         break;
+  //       }
+  //     }
+  //   }
+  //   else{
+  //     for (rIter = startRid; rIter < RECORDS_PER_BLOCK; rIter++){
+  //       printf("In Loop: Getting data from Block %d, Slot %d\n", bIter, rIter);
+  //       HP_GetEntry(fileDesc, bIter, rIter, &rec);
+  //       if (rec.id == val){
+  //         found = true;
+  //         break;
+  //       }
+  //     }
+  //   }
+  // }
+
+  // cleaned code
+
+  for (bIter = startBid; bIter <= metadata[mdpos].last_bid && !found; bIter++){
+    
+    int recStart = (bIter == startBid) ? startRid : 0; 
+
+    int recEnd = (bIter == metadata[mdpos].last_bid) ? metadata[mdpos].recs_last : RECORDS_PER_BLOCK;
+
+    for (rIter = recStart; rIter < recEnd; rIter++){
+      printf("In Loop...Getting data from block %d | record %d", bIter, rIter);
+
+      HP_GetEntry(fileDesc, bIter, rIter, &rec);
+
+      if (rec.id == val){
+        found = true;
+        break;
+      }
+    }
+  }
+
+  if (!found){
+    printf("Entry with id %d not found in records\n", val);
+    return HP_ERROR;
+  }
+
+  metadata[mdpos].iterHTable[key].iterator.bid = bIter;
+  metadata[mdpos].iterHTable[key].iterator.slot = rIter;
+  return HP_OK;
 }

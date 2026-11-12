@@ -81,6 +81,13 @@ int main(int argc, char *argv[]) {
   }
   
   // Record rec;
+  HP_InsertEntry(fileDesc, recs[2]);
+
+  int id = 2;
+  Record getrec;
+  HP_GetNextRecordWithID(fileDesc, &getrec, &recs[2].id);
+  HP_PrintAllEntries(fileDesc, "id", &id);
+  printRecord(recs[2]);
   
   // HP_GetEntry(fileDesc,1,0,&rec);
   // printRecord(rec);
